@@ -23,7 +23,7 @@ import socket
 import re
 # you may use urllib to encode data appropriately
 import urllib
-from urlparse import urlparse
+import urlparse
 
 def help():
     print "httpclient.py [GET/POST] [URL]\n"
@@ -34,43 +34,31 @@ class HTTPRequest(object):
         self.body = body
 
 class HTTPClient(object):
-    
-    def reg_url(self,url):
+
+    def parse_url(self,url):
         if (url.find("http://") != 0):
             url = "http://" + url
-        return url
-
-    def get_host_netloc(self,url):
-        o = urlparse(url)
+        
+        o = urlparse.urlparse(url)
+        
         if (":" in o.netloc):
             p = o.netloc.find(":")
-            return o.netloc[0:p]
-        return o.netloc
-            
-    def get_host_path(self,url):
-        o = urlparse(url)
-        return o.path
-    
-    def get_host_query(self,url):
-        o = urlparse(url)
-        if (o.query != ""):
-            return "?" + urllib.quote(o.query,"$&+,/:;=?@")
-        return o.query
-
-    def get_host_port(self,url):
-        o = urlparse(url)
-        if (o.port == None):
-            return 80
-        port = o.port
-        return int(port)
-    
-    def get_whole_addr(self,url):
-        url = self.reg_url(url)
-        netloc = self.get_host_netloc(url)
-        path = self.get_host_path(url)
-        query = self.get_host_query(url)
-        port = self.get_host_port(url)
+            netloc = o.netloc[0:p]
+        else:
+            netloc = o.netloc
         
+        path = o.path
+        
+        if (o.query != ""):
+            query = "?" + urllib.quote(o.query,"$&+,/:;=?@")
+        else:
+            query = o.query
+        
+        if (o.port == None):
+            port = 80
+        else:
+            port = int(o.port)
+
         host = netloc + ":" + str(port)
         path = path + query
 
@@ -103,27 +91,27 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):
-        port,netloc,path,host = self.get_whole_addr(url)
+        port,netloc,path,host = self.parse_url(url)
         sock = self.connect(netloc,port)
-        header = ("GET "+ path + 
+        _data = ("GET "+ path + 
                 " HTTP/1.1\r\n" +
                 "Host:"+ host + "\r\n" +
                 "Accept:*/*\r\n"+
                 "Connection:close\r\n\r\n")
-        sock.sendall(header)
+        sock.sendall(_data)
         _buffer = self.recvall(sock)
         code = self.get_code(_buffer)
         body = self.get_headers(_buffer) + self.get_body(_buffer)
         return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
-        port,netloc,path,host = self.get_whole_addr(url)
+        port,netloc,path,host = self.parse_url(url)
         sock = self.connect(netloc,port)
         if (args != None) :
             data = urllib.urlencode(args)
         else: 
             data = ''
-        header = ("POST "+ path + 
+        _data = ("POST "+ path + 
                 " HTTP/1.1\r\n" +
                 "Host:"+ host + "\r\n" +
                 "Accept:*/*\r\n" +
@@ -133,13 +121,10 @@ class HTTPClient(object):
                 "Content-Type:" +
                 "application/x-www-form-urlencoded\r\n\r\n" +
                 data)
-        sock.sendall(header)
-        
+        sock.sendall(_data)
         _buffer = self.recvall(sock)
-        
         code = self.get_code(_buffer)
-        body = self.get_body(_buffer)        
-        
+        body = self.get_body(_buffer)
         return HTTPRequest(code, body)
 
     def command(self, url, command="GET", args=None):
@@ -157,4 +142,4 @@ if __name__ == "__main__":
     elif (len(sys.argv) == 3):
         print client.command( sys.argv[1], sys.argv[2] )
     else:
-        print client.command( command, sys.argv[1] )    
+        print client.command( command, sys.argv[1] )
