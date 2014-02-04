@@ -129,9 +129,9 @@ class HTTPClient(object):
 
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
-            return self.POST( url, args )
+            return self.POST(url, args)
         else:
-            return self.GET( url, args )
+            return self.GET(url, args)
     
 if __name__ == "__main__":
     client = HTTPClient()
@@ -140,6 +140,6 @@ if __name__ == "__main__":
         help()
         sys.exit(1)
     elif (len(sys.argv) == 3):
-        print client.command( sys.argv[1], sys.argv[2] )
+        print client.command(sys.argv[1], sys.argv[2])
     else:
-        print client.command( command, sys.argv[1] )
+        print client.command(command, sys.argv[1])
